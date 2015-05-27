@@ -80,7 +80,7 @@ sub printLogs{
 	   $currentComponent = getComponent($extractedjira);
 	   if (defined $currentComponent)
 		 { 
-			  $printline = sprintf("%-20s | %-60s \n",$currentComponent,$line);
+			  $printline = sprintf("%-25s | %-60s \n",$currentComponent,$line);
 			  print $printline;
 			  
 			  push(@outputarray, $printline);
