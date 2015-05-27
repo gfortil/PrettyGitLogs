@@ -29,17 +29,7 @@ $repo = $cfg->param('REPO');
 print "\n";
 print "\n";
 
-#my $beginningtag;
-#my $endingtag;
-
 @outputarray = ("Changelogs");
-#@htmlarray = ("Changelogs");
-
-#$basicJIRA = "(IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL)(-[0-9]+)";
-
-#$htmlJIRA = "\<a\ href\=\"https://track.hpccsystems.com/browse/ "\ target\=\"_blank\"\> </a\>";
-
-
 
 Getopt::Long::GetOptions(
    'bt=s' => \$beginningtag,
@@ -98,7 +88,7 @@ sub printLogs{
 		 }
 	   else
 		 { 
-			$printline = "                     | $line \n";
+			$printline = "                          | $line \n";
 			print $printline;
 			
 			push(@outputarray, $printline);
