@@ -16,10 +16,6 @@ use Term::ReadKey;
 use Config::Simple;
 use Getopt::Long;
 
-
-print "Github Changelog Generator \n";
-print "\n";
-
 #read in config file
 $cfg = new Config::Simple('prettylogs.conf');
 $jirauser = $cfg->param('JIRAUser');
@@ -31,22 +27,54 @@ print "\n";
 
 @outputarray = ("Changelogs");
 
+$beginningtag = "";
+$endtag = "";
+
 Getopt::Long::GetOptions(
    'bt=s' => \$beginningtag,
    'et=s' => \$endtag,
    'o=s' => \$outputfile,
    'html=s' => \$html,
-   'out=s' => \$outputfile);
-
-my @changelog = `cd $repo && git log --oneline --max-parents=1  --pretty=format:\"%h, %s\" $beginningtag...$endtag  | cut -d \" \" -f 2-`;
-
-chomp @changelog;
+   'out=s' => \$outputfile,
+   'h' => \$help);
 
 
+   
+if ($beginningtag eq "" || $endtag eq "")
+{
+	if ($help)
+	{	printUsage(); }
+	
+	else
+	{
+		print "your beginning tag and end tags are empty \n";
+		printUsage();
+	}
+}
+   
+else
+{
+	print "Github Changelog Generator \n";
+	print "\n";
 
-printLogs();
+	@changelog = `cd $repo && git log --oneline --max-parents=1  --pretty=format:\"%h, %s\" $beginningtag...$endtag  | cut -d \" \" -f 2-`;
+	chomp @changelog;
+	printLogs();
+}
 
 
+sub printUsage{
+	print "Usage: perl prettyLogs.pl -bt <val> -et <val> [output options] \n";
+	print "\n \n \n";
+	print "  -bt      This is the beginning tag to be used. \n";  
+	print "           It should be the most recent tag you want to use. \n";
+	print "  -et      This is the ending tag. \n";  
+	print "           It should be the tag you want the logs to go back to. \n";
+	print "  -o       Name of your output file.  Example: outputfile.txt \n";
+	print "  -html    Outputs in html format.  Two files are generated.\n";
+	print "           1st file is htmoutname.htm.out  This file is for use on the portal. \n";
+	print "           2nd file is htmoutname.html  This file is for use to open in a browser. \n";
+}
 
 #primary subroutine for processing the changelogs
 sub printLogs{
