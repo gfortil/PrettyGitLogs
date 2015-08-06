@@ -5,28 +5,27 @@ Requirements:
  - perl
  - perl JIRA Client module
 
-Notes:
-- The script relies on the HPCC-Platform repository to be in this directory
-  ~/builds/HPCC-Platform
-- If your repository is located elsewhere, please edit this line in the script before running.
-
 Useage:
 
-  perl organizedLog.pl
+  perl organizedLog.pl -h
+  
+  Usage: perl prettyLogs.pl -bt <val> -et <val> [output options]
 
-This script relies on the following git log format:
-git log --oneline --max-parents=1 beginningtag...endingtag
+
+
+  -bt      This is the beginning tag to be used.
+           It should be the most recent tag you want to use.
+  -et      This is the ending tag.
+           It should be the tag you want the logs to go back to.
+  -o       Name of your output file.  Example: outputfile.txt
+  -html    Outputs in html format.  Two files are generated.
+           1st file is htmoutname.htm.out  This file is for use on the portal.
+           2nd file is htmoutname.html  This file is for use to open in a browser.
+
+
 
 Therefore, the user will need to enter the Build Tag that they want the logs for first, then the user will have to enter the point at which they want the logs to go all the way back to.
 
-User will be prompted to input their information like this:
-
-```
-  Please enter the Build Tag you want to start from: community_5.2.4-rc2
-  Please enter the Build Tag you want your log to go back to: community_5.2.2-1
-  Please type your JIRA username: 
-  Please type your JIRA password:
-
-```
+User should enter their credentials into the prettylogs.conf file.  
 
 Password will not be echoed out onto the screen.
