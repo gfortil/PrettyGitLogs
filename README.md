@@ -28,4 +28,4 @@ Therefore, the user will need to enter the Build Tag that they want the logs for
 
 User should enter their credentials into the prettylogs.conf file.  
 
-Password will not be echoed out onto the screen.
+
