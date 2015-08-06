@@ -5,8 +5,8 @@ Requirements:
  - perl
  - perl JIRA Client module
 
-Useage:
-
+Usage:
+```
   perl organizedLog.pl -h
   
   Usage: perl prettyLogs.pl -bt <val> -et <val> [output options]
@@ -21,7 +21,7 @@ Useage:
   -html    Outputs in html format.  Two files are generated.
            1st file is htmoutname.htm.out  This file is for use on the portal.
            2nd file is htmoutname.html  This file is for use to open in a browser.
-
+ ```
 
 
 Therefore, the user will need to enter the Build Tag that they want the logs for first, then the user will have to enter the point at which they want the logs to go all the way back to.
