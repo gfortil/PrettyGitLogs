@@ -259,7 +259,7 @@ sub outputToAll
 
 
 #subroutine for getting the component from jira.  
-#Currently only returns the first component if there's more than one.
+
 sub getComponent{
 	local ($issuenumber) = uc $_[0];
         
