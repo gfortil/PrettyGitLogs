@@ -15,6 +15,7 @@ use SOAP::Lite;
 use Term::ReadKey;
 use Config::Simple;
 use Getopt::Long;
+use JSON qw( decode_json );
 
 #read in config file
 $cfg = new Config::Simple('prettylogs.conf');
@@ -97,15 +98,20 @@ sub printLogs{
 	 
 	  $line =~ /(?{s{"}{\"}g;})/;
 	  $line =~ s/[^!-~\s]//g;
+
+	  my @splitstring = split / /,$line, 2;
 	  
 	  $extractedjira = substr( $line, 0, index( $line, ' ' ) );; 
-	   
+	  
+	  
 	  #trim whitespaces on both ends and newline
 	  $extractedjira =~ s/^\s+|\s+$//g;  
 	  $extractedjira =~ s/\\n//g;  
 	  $extractedjira =~ s/[\$#@~!&*()\[\];.,:?^ `\\\/]+//g;
+	  
+	  
 	 
-	  if ($extractedjira eq "Community"|| $extractedjira eq "Split")  
+	  if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge")  
 	   {
 		 #extracted jira isn't really a jira.  It's either a tag or some other split action in git
 		 #don't print splits of branch
@@ -119,12 +125,12 @@ sub printLogs{
 	   }
 
 	  else {
-	   $currentComponent = getComponent($extractedjira);
+	   $currentComponent = getComponent(uc $extractedjira);
 	   #$currentComponent =~ tr/ //ds;
 	   if (defined $currentComponent)
 		 { 
 			  #$printline = "$currentComponent $line \n";
-			  $printline = sprintf("%-25s | %-60s ",$currentComponent,$line);
+			  $printline = sprintf("%-35s | %-60s ",$currentComponent,$line);
 			 # print "$printline";
 			  
 			  push(@outputarray, $printline);
@@ -134,7 +140,7 @@ sub printLogs{
 	   else
 		 { 
 			#$printline = " $line \n";
-			$printline = "                          | $line ";
+			$printline = "                                    | $line ";
 			#print "$printline";
 			
 			push(@outputarray, $printline);
@@ -255,15 +261,23 @@ sub outputToAll
 #subroutine for getting the component from jira.  
 #Currently only returns the first component if there's more than one.
 sub getComponent{
-	local ($issuenumber) = $_[0];
+	local ($issuenumber) = uc $_[0];
         
 	my $jira = JIRA::Client->new('https://track.hpccsystems.com', $jirauser, $passwd);
 	my $issue = eval{$jira->getIssue($issuenumber)};
 
 	my $componentdetails = eval{$issue->{"components"}};
 
-	my $componentname = $componentdetails->[0]->{name};
-        return $componentname;
+	my $finalcomponentname;
+	
+	for my $componentname (@$componentdetails) 
+	{
+		if (!defined $finalcomponentname)
+		{$finalcomponentname = $componentname->{name}; }
+		else {$finalcomponentname = $finalcomponentname . ", " . $componentname->{name};};
+	}
+	return $finalcomponentname;
+	
 }
 
 
