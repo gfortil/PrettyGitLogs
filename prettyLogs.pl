@@ -151,6 +151,12 @@ sub printLogs{
 	
 }
 
+sub dedupe {
+    my %hash;
+    $hash{$_}++ for @_;
+  return keys %hash;
+}
+
 
 sub sortedOut
 {
@@ -158,6 +164,7 @@ sub sortedOut
 	my $str = "|";             # |
 	my $re = quotemeta($str);  # \|
 
+    @workingarray = dedupe(@workingarray);	
 	
 	my @tempsort = sort { (split $re, $a)[0].(split $re, $a)[1] cmp (split $re, $b)[0].(split $re, $b)[1]} @workingarray;
 
