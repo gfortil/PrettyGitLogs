@@ -9,18 +9,20 @@
 use warnings;
 use Data::Dumper;
 use DateTime;
-use JIRA::Client;
+#use JIRA::Client;
 use XMLRPC::Lite;
 use SOAP::Lite;
 use Term::ReadKey;
 use Config::Simple;
 use Getopt::Long;
+use JIRA::REST;
 use JSON qw( decode_json );
 
 #read in config file
 $cfg = new Config::Simple('prettylogs.conf');
 $jirauser = $cfg->param('JIRAUser');
 $passwd = $cfg->param('JIRAPW');
+
 
 
 print "\n";
@@ -66,9 +68,9 @@ if ($beginningtag eq "" || $endtag eq "")
    
 else
 {
-	print "Github Changelog Generator \n";
+	print "Github Changelog Generator\n";
 	print "\n";
-
+	
 	@changelog = `cd $repo && git log --oneline --max-parents=1  --pretty=format:\"%h, %s\" $beginningtag...$endtag  | cut -d \" \" -f 2-`;
 	chomp @changelog;
 	printLogs();
@@ -100,18 +102,18 @@ sub printLogs{
 	  $line =~ s/[^!-~\s]//g;
 
 	  my @splitstring = split / /,$line, 2;
-	  
+	  	  
 	  $extractedjira = substr( $line, 0, index( $line, ' ' ) );; 
-	  
+	  $summary = $splitstring[1];
 	  
 	  #trim whitespaces on both ends and newline
 	  $extractedjira =~ s/^\s+|\s+$//g;  
 	  $extractedjira =~ s/\\n//g;  
 	  $extractedjira =~ s/[\$#@~!&*()\[\];.,:?^ `\\\/]+//g;
 	  
-	  
-	 
-	  if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge")  
+	  if ($extractedjira !~ m/(IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL)/ ) 
+	  #IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL
+	  #if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge" || $extractedjira eq "Fix" )  
 	   {
 		 #extracted jira isn't really a jira.  It's either a tag or some other split action in git
 		 #don't print splits of branch
@@ -122,30 +124,37 @@ sub printLogs{
 				#push(@workingarray, $printline);
 			    push(@outputarray, $printline);
 			 }
+		else
+		 { 
+					
+			#$printline = " $line \n";
+			#$printline = "                                    | $extractedjira haybe $summary";
+			#print "$printline";
+			$printline = "                                    | $line ";
+			push(@outputarray, $printline);
+			push(@workingarray, $printline);
+		 } 
 	   }
 
 	  else {
-	   $currentComponent = getComponent(uc $extractedjira);
+	  
+	   #call jira cleaner subscript.
+	   $extractedjira = jiraCleaner(uc $extractedjira);
+	   
+	   #print "making sure this is the cleaned JIRA $extractedjira \n";
+	   $currentComponent = getComponent($extractedjira);
 	   #$currentComponent =~ tr/ //ds;
 	   if (defined $currentComponent)
 		 { 
-			  #$printline = "$currentComponent $line \n";
-			  $printline = sprintf("%-35s | %-60s ",$currentComponent,$line);
-			 # print "$printline";
-			  
+				
+			  $tempprintline = "$extractedjira $summary";
+			  $printline = sprintf("%-35s | %-60s ",$currentComponent,$tempprintline);			  
+			  #$printline = "$tempprintline $summary";
 			  push(@outputarray, $printline);
 			  push(@workingarray, $printline);
 			
 		 }
-	   else
-		 { 
-			#$printline = " $line \n";
-			$printline = "                                    | $line ";
-			#print "$printline";
-			
-			push(@outputarray, $printline);
-			push(@workingarray, $printline);
-		 } 
+	   
 	   }	  
 	}
 	
@@ -264,24 +273,47 @@ sub outputToAll
 	
 }
 
+sub jiraCleaner{
+
+	my ($precleanjira) = @_;
+	my $jiratype;
+	my $precleannumber;
+	my $cleanednumber;
+	my $cleanedjira;
+	
+	($jiratype, $precleannumber) = split /-/, $precleanjira;
+	( $cleanednumber = ($precleannumber // '') ) =~ s/\D+//g;
+	
+	
+	#$cleanednumber =~ s/\D+//g;
+	$cleanedjira = $jiratype . "-" . $cleanednumber;
+	
+	return $cleanedjira;
+}
+
 
 #subroutine for getting the component from jira.  
 
 sub getComponent{
 	local ($issuenumber) = uc $_[0];
-        
-	my $jira = JIRA::Client->new('https://track.hpccsystems.com', $jirauser, $passwd);
-	my $issue = eval{$jira->getIssue($issuenumber)};
-
-	my $componentdetails = eval{$issue->{"components"}};
-
+    my $jira = JIRA::REST->new('https://track.hpccsystems.com', $jirauser, $passwd);
+	
+	my $issue = $jira->GET("/issue/$issuenumber");
+	
+	
 	my $finalcomponentname;
 	
-	for my $componentname (@$componentdetails) 
+	foreach my $componentname (@{$issue->{fields}->{components}}) 
 	{
 		if (!defined $finalcomponentname)
-		{$finalcomponentname = $componentname->{name}; }
+		{$finalcomponentname = $componentname->{name};}
 		else {$finalcomponentname = $finalcomponentname . ", " . $componentname->{name};};
+	}
+
+	if(!defined $finalcomponentname)
+	{
+		$finalcomponentname = " ";
+		
 	}
 	return $finalcomponentname;
 	
