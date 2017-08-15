@@ -126,13 +126,15 @@ sub printLogs{
 			 }
 		else
 		 { 
-					
-			#$printline = " $line \n";
-			#$printline = "                                    | $extractedjira haybe $summary";
-			#print "$printline";
-			$printline = "                                    | $line ";
-			push(@outputarray, $printline);
-			push(@workingarray, $printline);
+			if ($extractedjira !~ m/(Merge|Split|Signed-off-by)/)
+			{
+				#$printline = " $line \n";
+				#$printline = "                                    | $extractedjira haybe $summary";
+				#print "$printline";
+				$printline = "                                    | $line ";
+				push(@outputarray, $printline);
+				push(@workingarray, $printline);
+			}
 		 } 
 	   }
 
