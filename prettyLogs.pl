@@ -103,6 +103,7 @@ sub printLogs{
 	  
 	  $line =~ /(?{s{"}{\"}g;})/;
 	  $line =~ s/[^!-~\s]//g;
+<<<<<<< HEAD
           $line = expand($line); #expand all tabs.
 	  
 	  my @splitstring = split /\s+/,$line, 2; 
@@ -110,6 +111,13 @@ sub printLogs{
 	  $extractedjira = substr( $line, 0, index( $line, ' ' ) );; 
 	  $summary = $splitstring[1];
 	  #print "OG jira is $extractedjira ";
+=======
+
+	  my @splitstring = split / /,$line, 2;
+	  	  
+	  $extractedjira = substr( $line, 0, index( $line, ' ' ) );; 
+	  $summary = $splitstring[1];
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	  
 	  #trim whitespaces on both ends and newline
 	  $extractedjira =~ s/^\s+|\s+$//g;  
@@ -118,8 +126,11 @@ sub printLogs{
 	  #$extractedjira =~ s/[\$#@~!&*()\[\];.,:?^ `\\\/]+//g;
 	  $extractedjira =~ s/[[:^alnum:]]/-/g; #cleaning the jira here;
 	  
+<<<<<<< HEAD
 	  #print "printing precleaned jira $extractedjira \n";
 	  
+=======
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	  if ($extractedjira !~ m/(IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL)/ ) 
 	  #IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL
 	  #if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge" || $extractedjira eq "Fix" )  
@@ -138,7 +149,11 @@ sub printLogs{
 			if ($extractedjira !~ m/(Merge|Split|Signed-off-by)/)
 			{
 				#$printline = " $line \n";
+<<<<<<< HEAD
 				#$printline = "                                    | $extractedjira maybe $summary";
+=======
+				#$printline = "                                    | $extractedjira haybe $summary";
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 				#print "$printline";
 				$printline = "                                    | $line ";
 				push(@outputarray, $printline);
@@ -148,11 +163,16 @@ sub printLogs{
 	   }
 
 	  else {
+<<<<<<< HEAD
 	   
+=======
+	  
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	   #call jira cleaner subscript.
 	   $extractedjira = jiraCleaner(uc $extractedjira);
 	   
 	   #print "making sure this is the cleaned JIRA $extractedjira \n";
+<<<<<<< HEAD
 	   
 	   if ($extractedjira eq "HPCC-")
 	   {
@@ -168,6 +188,9 @@ sub printLogs{
 	   {
 	   $currentComponent = getComponent($extractedjira);
 	   #$currentComponent =~ tr/ //ds;
+=======
+	   $currentComponent = getComponent($extractedjira);
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	   #$currentComponent =~ tr/ //ds;
 	   if (defined $currentComponent)
 		 { 
@@ -179,7 +202,11 @@ sub printLogs{
 			  push(@workingarray, $printline);
 			
 		 }
+<<<<<<< HEAD
 		}
+=======
+	   
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	   }	  
 	}
 	
@@ -305,6 +332,7 @@ sub jiraCleaner{
 	my $precleannumber;
 	my $cleanednumber;
 	my $cleanedjira;
+<<<<<<< HEAD
    my $precleanclone;
 	 
 	#$precleanjira = decode_utf8( $precleanjira);
@@ -321,15 +349,22 @@ sub jiraCleaner{
 
 		
 	($jiratype, $precleannumber) = split /[[:^alnum:]]/, $precleanjira;
+=======
+	
+	($jiratype, $precleannumber) = split /-/, $precleanjira;
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	( $cleanednumber = ($precleannumber // '') ) =~ s/\D+//g;
 	
 	
 	#$cleanednumber =~ s/\D+//g;
 	$cleanedjira = $jiratype . "-" . $cleanednumber;
 	
+<<<<<<< HEAD
 
 	#$cleanedjira = $precleanjira =~ s/([a-zA-Z]+)([0-9]+)/\1-\2/g;
 	
+=======
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
 	return $cleanedjira;
 }
 
@@ -340,6 +375,7 @@ sub getComponent{
 	local ($issuenumber) = uc $_[0];
     my $jira = JIRA::REST->new('https://track.hpccsystems.com', $jirauser, $passwd);
 	
+<<<<<<< HEAD
     my $finalcomponentname;
 	#my $issue = $jira->GET("/issue/$issuenumber");
 	try {
@@ -360,6 +396,24 @@ sub getComponent{
 	
 	
 
+
+	if(!defined $finalcomponentname)
+	{
+		$finalcomponentname = " ";
+		
+=======
+	my $issue = $jira->GET("/issue/$issuenumber");
+	
+	
+	my $finalcomponentname;
+	
+	foreach my $componentname (@{$issue->{fields}->{components}}) 
+	{
+		if (!defined $finalcomponentname)
+		{$finalcomponentname = $componentname->{name};}
+		else {$finalcomponentname = $finalcomponentname . ", " . $componentname->{name};};
+>>>>>>> 4cd5fb40309cadf7d2fc1c4b7e56b302a5289679
+	}
 
 	if(!defined $finalcomponentname)
 	{
