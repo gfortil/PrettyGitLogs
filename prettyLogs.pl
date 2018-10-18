@@ -9,18 +9,23 @@
 use warnings;
 use Data::Dumper;
 use DateTime;
-use JIRA::Client;
+#use JIRA::Client;
 use XMLRPC::Lite;
 use SOAP::Lite;
 use Term::ReadKey;
 use Config::Simple;
 use Getopt::Long;
+use JIRA::REST;
 use JSON qw( decode_json );
+use Text::Tabs;
+use Encode;
+use Try::Tiny;
 
 #read in config file
 $cfg = new Config::Simple('prettylogs.conf');
 $jirauser = $cfg->param('JIRAUser');
 $passwd = $cfg->param('JIRAPW');
+
 
 
 print "\n";
@@ -66,9 +71,9 @@ if ($beginningtag eq "" || $endtag eq "")
    
 else
 {
-	print "Github Changelog Generator \n";
+	print "Github Changelog Generator\n";
 	print "\n";
-
+	
 	@changelog = `cd $repo && git log --oneline --max-parents=1  --pretty=format:\"%h, %s\" $beginningtag...$endtag  | cut -d \" \" -f 2-`;
 	chomp @changelog;
 	printLogs();
@@ -95,23 +100,29 @@ sub printLogs{
  
 	foreach my $line (@changelog)
 	{
-	 
+	  
 	  $line =~ /(?{s{"}{\"}g;})/;
 	  $line =~ s/[^!-~\s]//g;
-
-	  my @splitstring = split / /,$line, 2;
+          $line = expand($line); #expand all tabs.
 	  
+	  my @splitstring = split /\s+/,$line, 2; 
+	  	  
 	  $extractedjira = substr( $line, 0, index( $line, ' ' ) );; 
-	  
+	  $summary = $splitstring[1];
+	  #print "OG jira is $extractedjira ";
 	  
 	  #trim whitespaces on both ends and newline
 	  $extractedjira =~ s/^\s+|\s+$//g;  
+	  
 	  $extractedjira =~ s/\\n//g;  
-	  $extractedjira =~ s/[\$#@~!&*()\[\];.,:?^ `\\\/]+//g;
+	  #$extractedjira =~ s/[\$#@~!&*()\[\];.,:?^ `\\\/]+//g;
+	  $extractedjira =~ s/[[:^alnum:]]/-/g; #cleaning the jira here;
 	  
+	  #print "printing precleaned jira $extractedjira \n";
 	  
-	 
-	  if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge")  
+	  if ($extractedjira !~ m/(IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL)/ ) 
+	  #IDE|EPE|HH|HPCC|HD|HSIC|JAPI|JDBC|ML|ODBC|RH|WSSQL
+	  #if ($extractedjira eq "Community"|| $extractedjira eq "Split" || $extractedjira eq "Signed-off-by" || $extractedjira eq "Merge" || $extractedjira eq "Fix" )  
 	   {
 		 #extracted jira isn't really a jira.  It's either a tag or some other split action in git
 		 #don't print splits of branch
@@ -122,30 +133,53 @@ sub printLogs{
 				#push(@workingarray, $printline);
 			    push(@outputarray, $printline);
 			 }
+		else
+		 { 
+			if ($extractedjira !~ m/(Merge|Split|Signed-off-by)/)
+			{
+				#$printline = " $line \n";
+				#$printline = "                                    | $extractedjira maybe $summary";
+				#print "$printline";
+				$printline = "                                    | $line ";
+				push(@outputarray, $printline);
+				push(@workingarray, $printline);
+			}
+		 } 
 	   }
 
 	  else {
-	   $currentComponent = getComponent(uc $extractedjira);
+	   
+	   #call jira cleaner subscript.
+	   $extractedjira = jiraCleaner(uc $extractedjira);
+	   
+	   #print "making sure this is the cleaned JIRA $extractedjira \n";
+	   
+	   if ($extractedjira eq "HPCC-")
+	   {
+		
+		$printline = " ".$line." ";
+		#print $printline;
+		#push(@workingarray, $printline);
+		push(@outputarray, $printline);
+	
+	   }
+	 
+	   else
+	   {
+	   $currentComponent = getComponent($extractedjira);
+	   #$currentComponent =~ tr/ //ds;
 	   #$currentComponent =~ tr/ //ds;
 	   if (defined $currentComponent)
 		 { 
-			  #$printline = "$currentComponent $line \n";
-			  $printline = sprintf("%-35s | %-60s ",$currentComponent,$line);
-			 # print "$printline";
-			  
+				
+			  $tempprintline = "$extractedjira $summary";
+			  $printline = sprintf("%-35s | %-60s ",$currentComponent,$tempprintline);			  
+			  #$printline = "$tempprintline $summary";
 			  push(@outputarray, $printline);
 			  push(@workingarray, $printline);
 			
 		 }
-	   else
-		 { 
-			#$printline = " $line \n";
-			$printline = "                                    | $line ";
-			#print "$printline";
-			
-			push(@outputarray, $printline);
-			push(@workingarray, $printline);
-		 } 
+		}
 	   }	  
 	}
 	
@@ -264,24 +298,73 @@ sub outputToAll
 	
 }
 
+sub jiraCleaner{
+
+	my ($precleanjira) = @_;
+	my $jiratype;
+	my $precleannumber;
+	my $cleanednumber;
+	my $cleanedjira;
+   my $precleanclone;
+	 
+	#$precleanjira = decode_utf8( $precleanjira);
+	#$precleanjira =~ s/[[:^alnum:]]//g;
+	
+	#$jiratype = $precleanjira;
+	#$cleanednumber = $precleanjira;
+	
+	#$precleanjira =~ s/:/-/g;
+	
+	#print " strip the hyphen or colon jira $precleanjira ";
+	
+	($jiratype, $cleanednumber) = $precleanjira =~/([a-zA-Z]+)(\d+)/;;
+
+		
+	($jiratype, $precleannumber) = split /[[:^alnum:]]/, $precleanjira;
+	( $cleanednumber = ($precleannumber // '') ) =~ s/\D+//g;
+	
+	
+	#$cleanednumber =~ s/\D+//g;
+	$cleanedjira = $jiratype . "-" . $cleanednumber;
+	
+
+	#$cleanedjira = $precleanjira =~ s/([a-zA-Z]+)([0-9]+)/\1-\2/g;
+	
+	return $cleanedjira;
+}
+
 
 #subroutine for getting the component from jira.  
 
 sub getComponent{
 	local ($issuenumber) = uc $_[0];
-        
-	my $jira = JIRA::Client->new('https://track.hpccsystems.com', $jirauser, $passwd);
-	my $issue = eval{$jira->getIssue($issuenumber)};
-
-	my $componentdetails = eval{$issue->{"components"}};
-
-	my $finalcomponentname;
+    my $jira = JIRA::REST->new('https://track.hpccsystems.com', $jirauser, $passwd);
 	
-	for my $componentname (@$componentdetails) 
+    my $finalcomponentname;
+	#my $issue = $jira->GET("/issue/$issuenumber");
+	try {
+		my $issue = $jira->GET("/issue/$issuenumber");
+		} catch {
+		$finalcomponentname = " ";
+		} finally { 
+		my $issue = $jira->GET("/issue/$issuenumber");
+			
+	
+			foreach my $componentname (@{$issue->{fields}->{components}}) 
+			{
+				if (!defined $finalcomponentname)
+				{$finalcomponentname = $componentname->{name};}
+				else {$finalcomponentname = $finalcomponentname . ", " . $componentname->{name};};
+			}
+		};
+	
+	
+
+
+	if(!defined $finalcomponentname)
 	{
-		if (!defined $finalcomponentname)
-		{$finalcomponentname = $componentname->{name}; }
-		else {$finalcomponentname = $finalcomponentname . ", " . $componentname->{name};};
+		$finalcomponentname = " ";
+		
 	}
 	return $finalcomponentname;
 	
