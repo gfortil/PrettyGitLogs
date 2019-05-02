@@ -8,7 +8,7 @@ sudo cpanm Term::ReadKey
 sudo cpanm Config::Simple
 sudo cpanm JIRA::REST
 sudo cpanm Date::PeriodParser --force
-
+sudo cpanm Config::Identity
 
 echo "Done"
 echo "Now Run PrettyLogs.pl"
