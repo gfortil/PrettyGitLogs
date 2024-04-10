@@ -80,7 +80,7 @@ foreach my $line (@changelog)
 sub getComponent{
 	local ($issuenumber) = $_[0];
         
-	my $jira = JIRA::Client->new('https://track.hpccsystems.com', $jirauser, $passwd);
+	my $jira = JIRA::Client->new('https://hpccsystems.atlassian.net', $jirauser, $passwd);
 	my $issue = eval{$jira->getIssue($issuenumber)};
 
 	my $componentdetails = eval{$issue->{"components"}};
